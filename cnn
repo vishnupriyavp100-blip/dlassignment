@@ -1,0 +1,225 @@
+# CNN Image Classification using CIFAR-10 Dataset
+
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
+import matplotlib.pyplot as plt
+import numpy as np
+
+# ---------------------------------------------------------
+# 1. Load CIFAR-10 Dataset
+# ---------------------------------------------------------
+
+(x_train, y_train), (x_test, y_test) = datasets.cifar10.load_data()
+
+print("Training images:", x_train.shape)
+print("Testing images :", x_test.shape)
+
+# CIFAR-10 class names
+class_names = [
+    'Airplane', 'Automobile', 'Bird', 'Cat', 'Deer',
+    'Dog', 'Frog', 'Horse', 'Ship', 'Truck'
+]
+
+# ---------------------------------------------------------
+# 2. Normalize Image Pixel Values
+# ---------------------------------------------------------
+
+# Pixel values are originally in the range 0 to 255.
+# Normalize them to the range 0 to 1.
+
+x_train = x_train.astype('float32') / 255.0
+x_test = x_test.astype('float32') / 255.0
+
+# ---------------------------------------------------------
+# 3. Convert Labels to One-Hot Encoding
+# ---------------------------------------------------------
+
+y_train = tf.keras.utils.to_categorical(y_train, 10)
+y_test = tf.keras.utils.to_categorical(y_test, 10)
+
+# ---------------------------------------------------------
+# 4. Design CNN Architecture
+# ---------------------------------------------------------
+
+model = models.Sequential([
+
+    # Convolution Layer 1
+    layers.Conv2D(
+        32,
+        (3, 3),
+        activation='relu',
+        input_shape=(32, 32, 3)
+    ),
+
+    # Max Pooling Layer 1
+    layers.MaxPooling2D((2, 2)),
+
+    # Convolution Layer 2
+    layers.Conv2D(
+        64,
+        (3, 3),
+        activation='relu'
+    ),
+
+    # Max Pooling Layer 2
+    layers.MaxPooling2D((2, 2)),
+
+    # Convolution Layer 3
+    layers.Conv2D(
+        128,
+        (3, 3),
+        activation='relu'
+    ),
+
+    # Max Pooling Layer 3
+    layers.MaxPooling2D((2, 2)),
+
+    # Dropout Layer
+    layers.Dropout(0.5),
+
+    # Flatten Layer
+    layers.Flatten(),
+
+    # Fully Connected Dense Layer
+    layers.Dense(128, activation='relu'),
+
+    # Dropout Layer
+    layers.Dropout(0.5),
+
+    # Softmax Output Layer
+    layers.Dense(10, activation='softmax')
+])
+
+# ---------------------------------------------------------
+# 5. Display Model Architecture
+# ---------------------------------------------------------
+
+model.summary()
+
+# ---------------------------------------------------------
+# 6. Compile the Model
+# ---------------------------------------------------------
+
+model.compile(
+    optimizer='adam',
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# ---------------------------------------------------------
+# 7. Train the CNN Model
+# ---------------------------------------------------------
+
+history = model.fit(
+    x_train,
+    y_train,
+    epochs=20,
+    batch_size=64,
+    validation_split=0.2,
+    verbose=1
+)
+
+# ---------------------------------------------------------
+# 8. Evaluate Model on Test Dataset
+# ---------------------------------------------------------
+
+test_loss, test_accuracy = model.evaluate(
+    x_test,
+    y_test,
+    verbose=0
+)
+
+# ---------------------------------------------------------
+# 9. Display Accuracy Results
+# ---------------------------------------------------------
+
+training_accuracy = history.history['accuracy'][-1]
+validation_accuracy = history.history['val_accuracy'][-1]
+
+print("\n--------------------------------------")
+print("        CNN PERFORMANCE")
+print("--------------------------------------")
+
+print("Training Accuracy   : {:.2f}%".format(
+    training_accuracy * 100
+))
+
+print("Validation Accuracy : {:.2f}%".format(
+    validation_accuracy * 100
+))
+
+print("Test Accuracy       : {:.2f}%".format(
+    test_accuracy * 100
+))
+
+print("Test Loss           : {:.4f}".format(
+    test_loss
+))
+
+# ---------------------------------------------------------
+# 10. Plot Loss Curve
+# ---------------------------------------------------------
+
+plt.figure(figsize=(8, 5))
+
+plt.plot(
+    history.history['loss'],
+    label='Training Loss'
+)
+
+plt.plot(
+    history.history['val_loss'],
+    label='Validation Loss'
+)
+
+plt.title('Training and Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.grid(True)
+
+plt.show()
+
+# ---------------------------------------------------------
+# 11. Plot Accuracy Curve
+# ---------------------------------------------------------
+
+plt.figure(figsize=(8, 5))
+
+plt.plot(
+    history.history['accuracy'],
+    label='Training Accuracy'
+)
+
+plt.plot(
+    history.history['val_accuracy'],
+    label='Validation Accuracy'
+)
+
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.grid(True)
+
+plt.show()
+
+# ---------------------------------------------------------
+# 12. Predict Sample Test Images
+# ---------------------------------------------------------
+
+predictions = model.predict(x_test[:10])
+
+predicted_classes = np.argmax(predictions, axis=1)
+actual_classes = np.argmax(y_test[:10], axis=1)
+
+print("\nSample Predictions:")
+print("--------------------------------------")
+
+for i in range(10):
+    print(
+        "Actual: {:10s} | Predicted: {:10s}".format(
+            class_names[actual_classes[i]],
+            class_names[predicted_classes[i]]
+        )
+    )
